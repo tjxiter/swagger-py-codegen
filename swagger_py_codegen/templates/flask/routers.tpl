@@ -4,7 +4,7 @@
 from __future__ import absolute_import
 
 {% for view in views -%}
-from .api.{{ view.endpoint }} import {{ view.name }}
+from .api.{{ view.module }} import {{ view.name }}
 {% endfor %}
 
 routes = [
