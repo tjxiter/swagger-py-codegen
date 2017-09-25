@@ -5,11 +5,11 @@ from flask import request, g
 
 from . import Resource
 from .. import schemas
+{% for view in views %}
 
 
-class {{ name }}(Resource):
-
-    {%- for method, ins in methods.items() %}
+class {{ view.name }}(Resource):
+    {%- for method, ins in view.methods.items() %}
 
     def {{ method.lower() }}(self{{ params.__len__() and ', ' or '' }}{{ params | join(', ') }}):
         {%- for request in ins.requests %}
@@ -22,3 +22,4 @@ class {{ name }}(Resource):
         pass
         {%- endif %}
     {%- endfor -%}
+{% endfor %}

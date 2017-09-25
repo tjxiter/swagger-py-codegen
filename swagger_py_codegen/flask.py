@@ -18,10 +18,11 @@ class Router(Code):
 
 class View(Code):
 
+    #import pdb; pdb.set_trace()
     template = 'flask/view.tpl'
     dest_template = '%(package)s/%(module)s/api/%(view)s.py'
     override = False
-
+    #dist_env = {'view': view}
 
 class Specification(Code):
 
@@ -96,7 +97,6 @@ def _swagger_to_flask_url(url, swagger_path_node):
 
     return url, params
 
-
 if six.PY3:
     def _remove_characters(text, deletechars):
         return text.translate({ord(x): None for x in deletechars})
@@ -104,11 +104,14 @@ else:
     def _remove_characters(text, deletechars):
         return text.translate(None, deletechars)
 
-
 def _path_to_endpoint(swagger_path):
     return _remove_characters(
         swagger_path.strip('/').replace('/', '_').replace('-', '_'),
         '{}')
+    #a =  _remove_characters(
+    #    swagger_path.strip('/').replace('/', '_').replace('-', '_'),
+    #    '{}')
+    #return a.split('_')[0]
 
 
 def _path_to_resource_name(swagger_path):
@@ -166,18 +169,19 @@ class FlaskGenerator(CodeGenerator):
 
     def _process_data(self):
 
-        views = []  # [{'endpoint':, 'name':, url: '', params: [], methods: {'get': {'requests': [], 'response'}}}, ..]
+        views = {}  # [{'endpoint':, 'name':, url: '', params: [], methods: {'get': {'requests': [], 'response'}}}, ..]
 
         for paths, data in self.swagger.search(['paths', '*']):
             swagger_path = paths[-1]
             url, params = _swagger_to_flask_url(swagger_path, data)
             endpoint = _path_to_endpoint(swagger_path)
             name = _path_to_resource_name(swagger_path)
-
             methods = OrderedDict()
+            module = data['module']
             for method in SUPPORT_METHODS:
                 if method not in data:
                     continue
+
                 methods[method] = {}
                 validator = self.validators.get((endpoint, method.upper()))
                 if validator:
@@ -193,14 +197,24 @@ class FlaskGenerator(CodeGenerator):
                         methods[method]['response'] = response
                         break
 
-            views.append(dict(
-                url=url,
-                params=params,
-                endpoint=endpoint,
-                methods=methods,
-                name=name
-            ))
-
+            if module in views:
+                views[module].append(dict(
+                    url=url,
+                    module=module,
+                    params=params,
+                    endpoint=endpoint,
+                    methods=methods,
+                    name=name
+                ))
+            else:
+                views[module] = [dict(
+                    url=url,
+                    module=module,
+                    params=params,
+                    endpoint=endpoint,
+                    methods=methods,
+                    name=name
+                    )]
         return views
 
     def _get_oauth_scopes(self):
@@ -210,9 +224,17 @@ class FlaskGenerator(CodeGenerator):
 
     def _process(self):
         views = self._process_data()
-        yield Router(dict(views=views))
-        for view in views:
-            yield View(view, dist_env=dict(view=view['endpoint']))
+        t_views = []
+        for k, v in views.items():
+            for one in v:
+                t_views.append(one)
+        yield Router(dict(views=t_views))
+        for k, view in views.items():
+            #for v in view:
+            #    print v['endpoint']
+            #    yield View(v, dist_env=dict(view=v['endpoint']))
+            print k,len(view)
+            yield View(dict(views=view),  dist_env=dict(view=k))
         if self.with_spec:
             try:
                 import simplejson as json
