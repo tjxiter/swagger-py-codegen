@@ -3,14 +3,14 @@ from __future__ import absolute_import
 
 from flask import Flask
 
-import {{ blueprint }}
+from {{ blueprint }} import api
 
 
 def create_app():
     app = Flask(__name__, static_folder='static')
     app.register_blueprint(
-        {{ blueprint }}.bp,
-        url_prefix='{{ base_path }}')
+        api.bp,
+        url_prefix='/api'+ '{{ base_path }}')
     return app
 
 if __name__ == '__main__':

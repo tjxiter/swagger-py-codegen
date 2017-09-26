@@ -3,11 +3,14 @@ from __future__ import absolute_import, print_function
 
 from flask import request, g
 
-from . import Resource
+from flask_restplus import Resource
+from . import rest
 from .. import schemas
 {% for view in views %}
 
 
+@rest.route('{{ view.url }}')
+@rest.header('X-Ypw-Token', 'auth token header', required=True)
 class {{ view.name }}(Resource):
     {%- for method, ins in view.methods.items() %}
 

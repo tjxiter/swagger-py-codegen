@@ -18,11 +18,10 @@ class Router(Code):
 
 class View(Code):
 
-    #import pdb; pdb.set_trace()
     template = 'flask/view.tpl'
     dest_template = '%(package)s/%(module)s/api/%(view)s.py'
     override = False
-    #dist_env = {'view': view}
+
 
 class Specification(Code):
 
@@ -224,17 +223,14 @@ class FlaskGenerator(CodeGenerator):
 
     def _process(self):
         views = self._process_data()
-        t_views = []
+        modules = []
         for k, v in views.items():
             for one in v:
-                t_views.append(one)
-        yield Router(dict(views=t_views))
+                modules.append(one['module'])
+        modules = list(set(modules))
+        #yield Router(dict(views=t_views))
         for k, view in views.items():
-            #for v in view:
-            #    print v['endpoint']
-            #    yield View(v, dist_env=dict(view=v['endpoint']))
-            print k,len(view)
-            yield View(dict(views=view),  dist_env=dict(view=k))
+            yield View(dict(views=view, blueprint=self.swagger.module_name),  dist_env=dict(view=k))
         if self.with_spec:
             try:
                 import simplejson as json
@@ -248,7 +244,7 @@ class FlaskGenerator(CodeGenerator):
 
         yield Validator()
 
-        yield Api()
+        yield Api(dict(blueprint=self.swagger.module_name, modules=modules))
 
         yield Blueprint(dict(scopes_supported=self.swagger.scopes_supported,
                              blueprint=self.swagger.module_name))
