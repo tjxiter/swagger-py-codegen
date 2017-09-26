@@ -4,14 +4,17 @@ from __future__ import absolute_import, print_function
 from flask import request, g
 
 from flask_restplus import Resource
-from . import rest
+from . import rest as api
 from .. import schemas
 {% for view in views %}
 
 
-@rest.route('{{ view.url }}')
-@rest.header('X-Ypw-Token', 'auth token header', required=True)
+@api.route('{{ view.url }}')
+@api.header('X-Ypw-Token', 'auth token header', required=True)
 class {{ view.name }}(Resource):
+
+    decorators = [login_required]
+
     {%- for method, ins in view.methods.items() %}
 
     def {{ method.lower() }}(self{{ params.__len__() and ', ' or '' }}{{ params | join(', ') }}):
