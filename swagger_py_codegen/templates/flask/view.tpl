@@ -1,4 +1,6 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 
 from flask import request, g
@@ -13,7 +15,7 @@ from .. import schemas
 @api.header('X-Ypw-Token', 'auth token header', required=True)
 class {{ view.name }}(Resource):
 
-    decorators = [login_required]
+    decorators = []
 
     {%- for method, ins in view.methods.items() %}
 

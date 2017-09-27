@@ -1,6 +1,10 @@
 from __future__ import absolute_import
 import re
 from collections import OrderedDict
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from .base import Code, CodeGenerator
 from .jsonschema import Schema, SchemaGenerator, build_default
@@ -221,21 +225,79 @@ class FlaskGenerator(CodeGenerator):
             return scopes
         return None
 
+    def _get_new_come(self, now):
+        # only get the new part
+
+        old_frame =  self.swagger.data['frame']
+        f = open(old_frame, 'r')
+
+        old = json.loads(f.read())
+
+        # if new < old,  TODO:
+        new = {}
+        for f, cm in now.items():
+            if f not in old:
+                new[f] = now[f]
+            else:
+                cc = now[f].keys()
+                for c in cc:
+                    if c not in old[f]:
+                        new[f][c] = now[f][c]
+                    else:
+                        for m in now[f][c]:
+                            tmp = []
+                            if m not in old[f][c]:
+                                tmp.append(m)
+                            if tmp:
+                                new[f] = {c: tmp}
+
+        f = open('frame_new.json', 'w')
+        f.write(json.dumps(new))
+        f.close()
+        return new
+
+    def _filter_views(self, views, new):
+
+        for k, v in views.items():
+            if k not in new:
+                del views[k]
+            else:
+                for one in v:
+                    # 过滤class
+                    if one['name'] not in new[k]:
+                        v.remove(one)
+                        views[k] = v
+                    # 过滤methods
+                    else:
+                        for m in one['methods'].keys():
+                            if m not in new[k][one['name']]:
+                                del one['methods'][m]
+        return views
+
     def _process(self):
+
         views = self._process_data()
+
+        # frame存储文件:class:methods结构
+        frame = {}
         modules = []
         for k, v in views.items():
             for one in v:
                 modules.append(one['module'])
+                if k not in frame:
+                    frame[k] = {one['name']: one['methods'].keys()}
+                else:
+                    frame[k][one['name']] = one['methods'].keys()
+
+        # 只要新来的
+        new = self._get_new_come(frame)
+
+        views = self._filter_views(views, new)
+
         modules = list(set(modules))
-        #yield Router(dict(views=t_views))
         for k, view in views.items():
             yield View(dict(views=view, blueprint=self.swagger.module_name),  dist_env=dict(view=k))
         if self.with_spec:
-            try:
-                import simplejson as json
-            except ImportError:
-                import json
             swagger = {}
             swagger.update(self.swagger.origin_data)
             swagger.pop('host', None)
