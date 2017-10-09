@@ -180,11 +180,10 @@ class FlaskGenerator(CodeGenerator):
             endpoint = _path_to_endpoint(swagger_path)
             name = _path_to_resource_name(swagger_path)
             methods = OrderedDict()
-            module = data['module']
             for method in SUPPORT_METHODS:
                 if method not in data:
                     continue
-
+                module = data[method]['tags'][0]
                 methods[method] = {}
                 validator = self.validators.get((endpoint, method.upper()))
                 if validator:
@@ -225,74 +224,13 @@ class FlaskGenerator(CodeGenerator):
             return scopes
         return None
 
-    def _get_new_come(self, now):
-        # only get the new part
-
-        old_frame =  self.swagger.data['frame']
-        f = open(old_frame, 'r')
-
-        old = json.loads(f.read())
-
-        # if new < old,  TODO:
-        new = {}
-        for f, cm in now.items():
-            if f not in old:
-                new[f] = now[f]
-            else:
-                cc = now[f].keys()
-                for c in cc:
-                    if c not in old[f]:
-                        new[f][c] = now[f][c]
-                    else:
-                        for m in now[f][c]:
-                            tmp = []
-                            if m not in old[f][c]:
-                                tmp.append(m)
-                            if tmp:
-                                new[f] = {c: tmp}
-
-        f = open('frame_new.json', 'w')
-        f.write(json.dumps(new))
-        f.close()
-        return new
-
-    def _filter_views(self, views, new):
-
-        for k, v in views.items():
-            if k not in new:
-                del views[k]
-            else:
-                for one in v:
-                    # 过滤class
-                    if one['name'] not in new[k]:
-                        v.remove(one)
-                        views[k] = v
-                    # 过滤methods
-                    else:
-                        for m in one['methods'].keys():
-                            if m not in new[k][one['name']]:
-                                del one['methods'][m]
-        return views
-
     def _process(self):
 
         views = self._process_data()
-
-        # frame存储文件:class:methods结构
-        frame = {}
         modules = []
         for k, v in views.items():
             for one in v:
                 modules.append(one['module'])
-                if k not in frame:
-                    frame[k] = {one['name']: one['methods'].keys()}
-                else:
-                    frame[k][one['name']] = one['methods'].keys()
-
-        # 只要新来的
-        new = self._get_new_come(frame)
-
-        views = self._filter_views(views, new)
 
         modules = list(set(modules))
         for k, view in views.items():

@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function
 from flask import request, g
 
 from flask_restplus import Resource
+from flask_login import current_user, login_required
 from . import rest as api
 from .. import schemas
 {% for view in views %}
@@ -15,7 +16,7 @@ from .. import schemas
 @api.header('X-Ypw-Token', 'auth token header', required=True)
 class {{ view.name }}(Resource):
 
-    decorators = []
+    #decorators = [login_required]
 
     {%- for method, ins in view.methods.items() %}
 
