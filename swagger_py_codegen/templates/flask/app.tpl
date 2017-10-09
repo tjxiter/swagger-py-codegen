@@ -14,8 +14,7 @@ def create_app():
     app = Flask(__name__, static_folder='static')
     app.register_blueprint(
         api.bp,
-        url_prefix='{{ base_path }}')
-        #url_prefix='/api'+ '{{ base_path }}')
+        url_prefix='/api'+ '{{ base_path }}')
 
     app.secret_key = SECRET_KEY
     login_manager = LoginManager()

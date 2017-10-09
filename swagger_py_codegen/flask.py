@@ -240,6 +240,7 @@ class FlaskGenerator(CodeGenerator):
             swagger.update(self.swagger.origin_data)
             swagger.pop('host', None)
             swagger.pop('schemes', None)
+            swagger['basePath'] = '/api/v2'
             yield Specification(dict(swagger=json.dumps(swagger, indent=2)))
 
         yield Validator()
